@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 
 import torch
-from comb_modules.losses import HammingLoss
+from comb_modules.losses import HammingLoss, PathCostLoss
 from comb_modules.dijkstra import ShortestPath
 from logger import Logger
 from models import get_model
@@ -16,7 +16,7 @@ from .metrics import compute_metrics
 import numpy as np
 from collections import defaultdict
 def get_trainer(trainer_name):
-    trainers = {"Baseline": BaselineTrainer, "DijkstraOnFull": DijkstraOnFull}
+    trainers = {"Baseline": BaselineTrainer, "DijkstraOnFull": DijkstraOnFull, "DijkstraWithPathCostLoss": DijkstraWithPathCostLoss}
     return trainers[trainer_name]
 from torch.optim.lr_scheduler import ReduceLROnPlateau, MultiStepLR
 from .visualization import draw_paths_on_image
@@ -93,7 +93,7 @@ class ShortestPathAbstractTrainer(ABC):
             # measure data loading time
             data_time.update(time.time() - end)
 
-            loss, accuracy, last_suggestion = self.forward_pass(input, true_path, train=True, i=i)
+            loss, accuracy, last_suggestion = self.forward_pass(input, true_path, true_weights, train=True, i=i)
 
             suggested_path = last_suggestion["suggested_path"]
 
@@ -150,10 +150,10 @@ class ShortestPathAbstractTrainer(ABC):
             )
 
             if self.use_cuda:
-                input = input.cuda(async=True)
-                true_path = true_path.cuda(async=True)
+                input = input.cuda(non_blocking=True)
+                true_path = true_path.cuda(non_blocking=True)
 
-            loss, accuracy, last_suggestion = self.forward_pass(input, true_path, train=False, i=i)
+            loss, accuracy, last_suggestion = self.forward_pass(input, true_path, true_weights, train=False, i=i)
             suggested_path = last_suggestion["suggested_path"]
             data.update(last_suggestion)
             if i == 0:
@@ -181,7 +181,7 @@ class ShortestPathAbstractTrainer(ABC):
         pass
 
     @abstractmethod
-    def forward_pass(self, input, true_shortest_paths, train, i):
+    def forward_pass(self, input, true_shortest_paths, true_weights, train, i):
         pass
 
     def log(self, data, train, k=None, num=None):
@@ -208,7 +208,7 @@ class BaselineTrainer(ShortestPathAbstractTrainer):
             model_name, out_features=self.metadata["output_features"], in_channels=self.metadata["num_channels"], arch_params=arch_params
         )
 
-    def forward_pass(self, input, label, train, i):
+    def forward_pass(self, input, label, true_weights, train, i):
         output = self.model(input)
         output = torch.sigmoid(output)
         flat_target = label.view(label.size()[0], -1)
@@ -228,7 +228,6 @@ class DijkstraOnFull(ShortestPathAbstractTrainer):
         super().__init__(**kwargs)
         self.l1_regconst = l1_regconst
         self.lambda_val = lambda_val
-        self.solver = ShortestPath(lambda_val=lambda_val, neighbourhood_fn=self.neighbourhood_fn)
         self.loss_fn = HammingLoss()
 
         print("META:", self.metadata)
@@ -237,7 +236,7 @@ class DijkstraOnFull(ShortestPathAbstractTrainer):
             model_name, out_features=self.metadata["output_features"], in_channels=self.metadata["num_channels"], arch_params=arch_params
         )
 
-    def forward_pass(self, input, true_shortest_paths, train, i):
+    def forward_pass(self, input, true_shortest_paths, true_weights, train, i):
         output = self.model(input)
         # make grid weights positive
         output = torch.abs(output)
@@ -246,9 +245,53 @@ class DijkstraOnFull(ShortestPathAbstractTrainer):
         if i == 0 and not train:
             print(output[0])
         assert len(weights.shape) == 3, f"{str(weights.shape)}"
-        shortest_paths = self.solver(weights)
+        shortest_paths = ShortestPath.apply(weights, self.lambda_val, self.neighbourhood_fn)
 
         loss = self.loss_fn(shortest_paths, true_shortest_paths)
+
+        logger = self.train_logger if train else self.val_logger
+
+        last_suggestion = {
+            "suggested_weights": weights,
+            "suggested_path": shortest_paths
+        }
+
+        accuracy = (torch.abs(shortest_paths - true_shortest_paths) < 0.5).to(torch.float32).mean()
+        extra_loss = self.l1_regconst * torch.mean(output)
+        loss += extra_loss
+
+        return loss, accuracy, last_suggestion
+
+
+class DijkstraWithPathCostLoss(ShortestPathAbstractTrainer):
+    def __init__(self, *, l1_regconst, lambda_val, **kwargs):
+        super().__init__(**kwargs)
+        self.l1_regconst = l1_regconst
+        self.lambda_val = lambda_val
+        self.loss_fn = PathCostLoss()
+
+        print("META:", self.metadata)
+    
+    def build_model(self, model_name, arch_params):
+        self.model = get_model(
+            model_name, out_features=self.metadata["output_features"], in_channels=self.metadata["num_channels"], arch_params=arch_params
+        )
+
+    def forward_pass(self, input, true_shortest_paths, true_weights, train, i):
+        output = self.model(input)
+        # make grid weights positive
+        output = torch.abs(output)
+        weights = output.reshape(-1, output.shape[-1], output.shape[-1])
+
+        if i == 0 and not train:
+            print(output[0])
+        assert len(weights.shape) == 3, f"{str(weights.shape)}"
+        shortest_paths = ShortestPath.apply(weights, self.lambda_val, self.neighbourhood_fn)
+
+        # Use PathCostLoss: compute sum of true costs for suggested path
+        path_costs = self.loss_fn(shortest_paths, true_weights)
+        # Take mean across batch
+        loss = path_costs.mean()
 
         logger = self.train_logger if train else self.val_logger
 

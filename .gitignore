@@ -1,3 +1,95 @@
+# Data directories (large datasets)
 /data/globe_tsp/
 /data/mnist_matching/
 /data/warcraft_maps/
+
+globe_tsp/
+
+# Results and experiments (model checkpoints, logs, outputs)
+/results/
+*.log
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.conda/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.spyderproject
+.spyproject
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# PyTorch model files
+*.pth
+*.pt
+
+# TensorBoard logs
+runs/
+logs/
+
+# Temporary test files
+test_*.json
+test_*.py
+
+# Large compressed data files
+*.tar.gz
+*.zip
+*.7z
+
+# Ray temp files (if using Ray)
+/tmp/
+ray_results/
+
+# Pipenv
+Pipfile.lock
+
+data/warcraft_shortest_path/
+
+
+warcraft_shortest_path/
+
+warcraft_shortest_path_oneskin/

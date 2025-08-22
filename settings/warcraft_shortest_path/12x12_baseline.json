@@ -29,7 +29,7 @@
             "lr": 0.0005
         },
         "preload_batch": true,
-        "use_cuda": true,
+        "use_cuda": false,
         "use_lr_scheduling": false
     },
     "use_ray": true

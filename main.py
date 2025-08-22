@@ -55,7 +55,7 @@ def main():
             num_cpus=num_cpus,
             logging_level=WARNING,
             ignore_reinit_error=True,
-            redis_max_memory=10 ** 9,
+            # redis_max_memory=10 ** 9,
             log_to_driver=False,
             **params.get("ray_params", {})
         )

@@ -7,14 +7,14 @@
         "use_local_path": false,
         "use_test_set": true
     },
-    "model_dir": "results/warcraft_shortest_path_combresnet",
-    "num_cpus": 4,
+    "model_dir": "results/warcraft_shortest_path_pathcostloss",
+    "num_cpus": 8,
     "num_epochs": 50,
     "problem_type": "warcraft_shortest_path",
     "ray_params": {},
     "save_visualizations": false,
     "seed": 1,
-    "trainer_name": "DijkstraOnFull",
+    "trainer_name": "DijkstraWithPathCostLoss",
     "trainer_params": {
         "batch_size": 70,
         "l1_regconst": 0.0,
@@ -28,7 +28,7 @@
         "neighbourhood_fn": "8-grid",
         "optimizer_name": "Adam",
         "optimizer_params": {
-            "lr": 0.0005
+            "lr": 0.001
         },
         "preload_batch": true,
         "use_cuda": false,
