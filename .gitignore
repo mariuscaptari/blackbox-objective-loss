@@ -3,7 +3,7 @@
 /data/mnist_matching/
 /data/warcraft_maps/
 
-globe_tsp/
+/data/warcraft_shortest_path/
 
 # Results and experiments (model checkpoints, logs, outputs)
 /results/
@@ -86,10 +86,3 @@ ray_results/
 
 # Pipenv
 Pipfile.lock
-
-data/warcraft_shortest_path/
-
-
-warcraft_shortest_path/
-
-warcraft_shortest_path_oneskin/
