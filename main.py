@@ -94,6 +94,10 @@ def main():
     train_results = train_results or {}
     save_metrics_params(params=params, metrics={**eval_results, **train_results})
 
+    # Save the trained model
+    model_path = os.path.join(params.model_dir, "model.pth")
+    trainer.save_model(model_path)
+
     if params.save_visualizations:
         print("Saving visualization images")
         trainer.log_visualization()

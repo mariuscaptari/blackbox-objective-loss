@@ -135,6 +135,29 @@ class ShortestPathAbstractTrainer(ABC):
             **{"train_"+k: avg_metrics[k].avg for k in avg_metrics.keys()}
         }
 
+    def save_model(self, filepath):
+        """Save the model weights to a file"""
+        import torch
+        import os
+        
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        # Save model state dict
+        torch.save(self.model.state_dict(), filepath)
+        print(f"Model saved to: {filepath}")
+    
+    def load_model(self, filepath):
+        """Load model weights from a file"""
+        import torch
+        import os
+        
+        if os.path.exists(filepath):
+            self.model.load_state_dict(torch.load(filepath, map_location='cpu'))
+            print(f"Model loaded from: {filepath}")
+        else:
+            print(f"Model file not found: {filepath}")
+
     def evaluate(self):
         avg_metrics = defaultdict(AverageMeter)
 

@@ -7,11 +7,12 @@
         "use_local_path": false,
         "use_test_set": true
     },
-    "model_dir": "results/warcraft_shortest_path_pathcostloss",
-    "num_cpus": 8,
+    "model_dir": "results/warcraft_shortest_path_pathcostloss_with_models",
+    "num_cpus": 10,
     "num_epochs": 50,
     "problem_type": "warcraft_shortest_path",
     "ray_params": {},
+    "save_model": true,
     "save_visualizations": false,
     "seed": 1,
     "trainer_name": "DijkstraWithPathCostLoss",
@@ -19,8 +20,8 @@
         "batch_size": 70,
         "l1_regconst": 0.0,
         "lambda_val": 20.0,
-        "lr_milestone_1": 30,
-        "lr_milestone_2": 40,
+        "lr_milestone_1": 20,
+        "lr_milestone_2": 30,
         "model_params": {
             "arch_params": {},
             "model_name": "CombResnet18"
@@ -28,11 +29,11 @@
         "neighbourhood_fn": "8-grid",
         "optimizer_name": "Adam",
         "optimizer_params": {
-            "lr": 0.001
+            "lr": 0.0005
         },
         "preload_batch": true,
         "use_cuda": false,
         "use_lr_scheduling": true
     },
-    "use_ray": true
+    "use_ray": false
 }
